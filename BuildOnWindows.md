@@ -15,8 +15,8 @@ Build protobuf as a static library.
 
 [same-as-file]: <> (utils/install-protobuf.cmd)
 ```shell
-REM Check out protobuf v3.18.3
-set protobuf_version=3.18.3
+REM Check out protobuf v21.12
+set protobuf_version=21.12
 git clone -b v%protobuf_version% --recursive https://github.com/protocolbuffers/protobuf.git
 
 set root_dir=%cd%
@@ -40,9 +40,9 @@ Before running CMake for onnx-mlir, ensure that the bin directory to this protob
 set PATH=%root_dir%\protobuf_install\bin;%PATH%
 ```
 
-If you wish to be able to run all the ONNX-MLIR tests, you will also need to install the matchin version of protobuf through pip:
+If you wish to be able to run all the ONNX-MLIR tests, you will also need to install the matching version of protobuf through pip. Note that this is included in the requirements.txt file at the root of onnx-mlir, so if you plan on using it, you won't need to explicitly install protobuf.
 ```shell
-python3 -m pip install protobuf==3.18.3
+python3 -m pip install protobuf==4.21.12
 ```
 
 #### MLIR
@@ -52,7 +52,7 @@ Install MLIR (as a part of LLVM-Project):
 ```shell
 git clone -n https://github.com/llvm/llvm-project.git
 # Check out a specific branch that is known to work with ONNX-MLIR.
-cd llvm-project && git checkout 74fb770de9399d7258a8eda974c93610cfde698e && cd ..
+cd llvm-project && git checkout af20aff35ec37ead88903bc3e44f6a81c5c9ca4e && cd ..
 ```
 
 [same-as-file]: <> (utils/build-mlir.cmd)
@@ -62,13 +62,15 @@ md llvm-project\build
 cd llvm-project\build
 call cmake %root_dir%\llvm-project\llvm -G "Ninja" ^
    -DCMAKE_INSTALL_PREFIX="%root_dir%\llvm-project\build\install" ^
-   -DLLVM_ENABLE_PROJECTS=mlir ^
+   -DLLVM_ENABLE_PROJECTS="mlir;clang;openmp" ^
    -DLLVM_TARGETS_TO_BUILD="host" ^
    -DCMAKE_BUILD_TYPE=Release ^
    -DLLVM_ENABLE_ASSERTIONS=ON ^
    -DLLVM_ENABLE_RTTI=ON ^
    -DLLVM_ENABLE_ZLIB=OFF ^
-   -DLLVM_INSTALL_UTILS=ON
+   -DLLVM_INSTALL_UTILS=ON ^
+   -DENABLE_LIBOMPTARGET=OFF ^
+   -DLLVM_ENABLE_LIBEDIT=OFF
 
 call cmake --build . --config Release
 call cmake --build . --config Release --target install
@@ -99,6 +101,7 @@ call cmake %root_dir%\onnx-mlir -G "Ninja" ^
    -DLLVM_EXTERNAL_LIT=%lit_path% ^
    -DLLVM_LIT_ARGS=-v ^
    -DMLIR_DIR=%root_dir%\llvm-project\build\lib\cmake\mlir ^
+   -DONNX_MLIR_ENABLE_STABLEHLO=OFF ^
    -DONNX_MLIR_ENABLE_WERROR=ON
 
 call cmake --build . --config Release
